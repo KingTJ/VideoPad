@@ -5,7 +5,8 @@ const exphbs  = require('express-handlebars');
 const methodOverride = require('method-override');
 const flash = require('connect-flash'); 
 const session = require('express-session'); 
-const bodyParser = require('body-parser'); 
+const bodyParser = require('body-parser');
+const passport = require('passport'); 
 const mongoose = require('mongoose'); 
 
 // Initialize Application
@@ -14,6 +15,9 @@ const app = express();
 // Load Routes
 const ideas = require('./routes/ideas'); 
 const users = require('./routes/users'); 
+
+// Passport Config
+require('./config/passport')(passport);
 
 // Map Global Promise - get rid of warning
 mongoose.Promise = global.Promise; 
@@ -53,6 +57,10 @@ app.use(session({
   saveUninitialized: true,
 }))
 
+// Passport middleware. This has to go after Express Session middleware or it will cause issues
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(flash());
 
 // Global Variables
@@ -61,6 +69,9 @@ app.use(function(req, res, next){
     res.locals.msg_error = req.flash('msg_error');
     // This is for later for implementing passport for User Authentication
     res.locals.error = req.flash('error'); 
+    // WHen you're logged in, you have access to a request object called user. So here we create a global variable for that object
+    // So if there is an user, we cam hide certain elements such as login/register buttons 
+    res.locals.user = req.user || null; 
     next(); 
 });
 

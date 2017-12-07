@@ -11,6 +11,11 @@ const IdeaSchema = new Schema({
         type: String,
         required: true
     },
+    // This user field is so that we can tag that user's id to the specefic idea they created
+    user:{
+        type: String,
+        required: true
+    },
     date: {
         type: Date,
         default: Date.now 

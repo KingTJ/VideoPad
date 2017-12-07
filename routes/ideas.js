@@ -1,14 +1,16 @@
 const express = require('express'); 
 const mongoose = require('mongoose'); 
 const router = express.Router(); 
+const {ensureAuthenticated} = require('../helpers/auth')
 
 // Load Idea Model. We use two dots here to signify that we have to go up one folder to get to the Idea file. (./) means same folder.
 require('../models/Idea');
 const Idea = mongoose.model('ideas');
 
 // Idea Index Page
-router.get('/', (req, res) => {
-    Idea.find({})
+router.get('/', ensureAuthenticated, (req, res) => {
+    // Match each idea to their specific user
+    Idea.find({user: req.user.id})
         .sort({date:'desc'})
         .then(ideas => {
             res.render('ideas/index', {
@@ -18,24 +20,29 @@ router.get('/', (req, res) => {
 });
 
 // Add Idea Form
-router.get('/add', (req, res) => {
+router.get('/add', ensureAuthenticated, (req, res) => {
     res.render('ideas/add');
 });
 
 // Edit Idea Form
-router.get('/edit/:id', (req, res) => {
+router.get('/edit/:id', ensureAuthenticated, (req, res) => {
     Idea.findOne({
         _id: req.params.id
     })
     .then(idea => {
-        res.render('ideas/edit', {
-            idea:idea 
-        }); 
+        if(idea.user != req.user.id){
+            req.flash('msg_error', 'Not Authorized'); 
+            res.redirect('/ideas');  
+        } else{
+            res.render('ideas/edit', {
+                idea:idea 
+        });   
+        }      
     }); 
 });
 
 // Process Form
-router.post('/', (req, res) => {
+router.post('/', ensureAuthenticated, (req, res) => {
     let errors = [];
     
     if(!req.body.title){
@@ -56,7 +63,8 @@ router.post('/', (req, res) => {
     } else {
         const newUser = {
             title: req.body.title,
-            details: req.body.details
+            details: req.body.details,
+            user: req.user.id
         }
         new Idea(newUser)
             .save()
@@ -68,15 +76,14 @@ router.post('/', (req, res) => {
 });
 
 // Edit Form Process
-router.put('/:id', (req, res) => {
+router.put('/:id', ensureAuthenticated, (req, res) => {
     Idea.findOne({
         _id: req.params.id 
     })
     .then(idea => {
         // new values
         idea.title = req.body.title;
-        idea.details = req.body.details;
-        
+        idea.details = req.body.details;       
         idea.save()
             .then(idea => {
                 req.flash('msg_success', 'Video Idea Updated.');
@@ -86,13 +93,12 @@ router.put('/:id', (req, res) => {
 });
 
 // Delete Idea
-router.delete('/:id', (req, res) => {
+router.delete('/:id', ensureAuthenticated, (req, res) => {
     Idea.remove({_id: req.params.id})
         .then(() => {
             req.flash('msg_success', 'Video Idea Removed.'); 
             res.redirect('/ideas');
         });
 });
-
 
 module.exports = router; 
