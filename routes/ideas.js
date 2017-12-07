@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const router = express.Router(); 
 const {ensureAuthenticated} = require('../helpers/auth')
 
-// Load Idea Model. We use two dots here to signify that we have to go up one folder to get to the Idea file. (./) means same folder.
+// Load Idea Model. We use two dots here to signify that we have to go up one directory to get to the Idea file. './' means same direc.
 require('../models/Idea');
 const Idea = mongoose.model('ideas');
 
